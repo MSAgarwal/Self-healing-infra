@@ -1,0 +1,37 @@
+---
+- name: Disk Cleanup
+  hosts: local
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - name: Log disk cleanup start
+      debug:
+        msg: "Starting disk cleanup for alert: {{ alert_name | default('Unknown') }}"
+
+    - name: Find large files in /var/log older than 7 days
+      shell: "find /var/log -type f -name '*.log' -mtime +7 -print0 | xargs -0 du -h | sort -rh | head -n 20"
+      register: old_logs
+      ignore_errors: yes
+
+    - name: Truncate rotated logs (careful in prod)
+      shell: "find /var/log -type f -name '*.log' -mtime +30 -exec truncate -s 0 {} \\;"
+      ignore_errors: yes
+
+    - name: Remove apt cache
+      apt:
+        autoclean: yes
+      when: ansible_facts['pkg_mgr'] == 'apt'
+      ignore_errors: yes
+
+    - name: Remove yum cache
+      shell: "yum clean all"
+      when: ansible_facts['pkg_mgr'] == 'yum'
+      ignore_errors: yes
+
+    - name: Log disk cleanup completion
+      lineinfile:
+        path: /tmp/recovery.log
+        create: yes
+        line: "{{ ansible_date_time.iso8601 }} - Disk cleanup completed - Alert: {{ alert_name | default('Manual') }}"
+      delegate_to: localhost

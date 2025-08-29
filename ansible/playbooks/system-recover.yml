@@ -1,0 +1,69 @@
+---
+- name: System Recovery and Optimization
+  hosts: local
+  gather_facts: yes
+  become: yes
+  
+  tasks:
+    - name: Log system recovery start
+      debug:
+        msg: "Starting system recovery for alert: {{ alert_name | default('Unknown') }}"
+
+    - name: Check system resources
+      shell: |
+        echo "=== CPU Usage ==="
+        top -bn1 | grep "Cpu(s)" | awk '{print $2}' | sed 's/%us,//'
+        echo "=== Memory Usage ==="
+        free -h
+        echo "=== Disk Usage ==="
+        df -h /
+        echo "=== Load Average ==="
+        uptime
+      register: system_stats
+
+    - name: Display current system stats
+      debug:
+        msg: "{{ system_stats.stdout_lines }}"
+
+    - name: Kill high CPU processes (if any)
+      shell: |
+        # Kill processes using more than 80% CPU
+        ps aux --no-headers | awk '{if ($3 > 80.0) print $2}' | head -5
+      register: high_cpu_processes
+      changed_when: false
+
+    - name: Restart high resource containers
+      docker_container:
+        name: "{{ item }}"
+        restart: yes
+      loop:
+        - nginx-target
+      ignore_errors: yes
+
+    - name: Clean up system resources
+      shell: |
+        # Clear page cache, dentries and inodes
+        sync
+        echo 3 > /proc/sys/vm/drop_caches
+        
+        # Clean up temporary files
+        find /tmp -type f -atime +7 -delete
+        
+        # Clean up log files older than 30 days
+        find /var/log -name "*.log" -type f -mtime +30 -delete
+      ignore_errors: yes
+
+    - name: Restart system services if needed
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - docker
+      ignore_errors: yes
+      when: ansible_service_mgr == "systemd"
+
+    - name: Log system recovery completion
+      lineinfile:
+        path: /tmp/recovery.log
+        create: yes
+        line: "{{ ansible_date_time.iso8601 }} - System recovery completed - Alert: {{ alert_name | default('Manual') }}"

@@ -1,0 +1,75 @@
+---
+- name: Restart NGINX Service
+  hosts: local
+  gather_facts: yes
+  vars:
+    container_name: "nginx-target"
+    service_name: "nginx"
+    
+  tasks:
+    - name: Log alert information
+      debug:
+        msg: |
+          Alert: {{ alert_name | default('Unknown') }}
+          Severity: {{ severity | default('Unknown') }}
+          Service: {{ service | default('Unknown') }}
+          Timestamp: {{ timestamp | default('Unknown') }}
+
+    - name: Check if NGINX container is running
+      docker_container_info:
+        name: "{{ container_name }}"
+      register: container_info
+      ignore_errors: yes
+
+    - name: Display container status
+      debug:
+        msg: "Container {{ container_name }} status: {{ container_info.container.State.Status if container_info.exists else 'Not found' }}"
+
+    - name: Restart NGINX container if it exists but is not running
+      docker_container:
+        name: "{{ container_name }}"
+        state: started
+        restart: yes
+        restart_policy: unless-stopped
+      when: container_info.exists
+      register: restart_result
+
+    - name: Start NGINX container if it doesn't exist
+      docker_container:
+        name: "{{ container_name }}"
+        image: nginx:alpine
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "80:80"
+        networks:
+          - name: "{{ ansible_hostname }}_monitoring"
+      when: not container_info.exists
+      register: start_result
+
+    - name: Wait for NGINX to be ready
+      uri:
+        url: "http://localhost:80"
+        method: GET
+        status_code: [200, 403]  # 403 is also acceptable for default nginx
+      retries: 10
+      delay: 3
+      register: nginx_health_check
+      until: nginx_health_check.status in [200, 403]
+
+    - name: Log recovery success
+      debug:
+        msg: "NGINX service recovery completed successfully at {{ ansible_date_time.iso8601 }}"
+
+    - name: Send recovery notification
+      uri:
+        url: "http://localhost:9093/-/reload"
+        method: POST
+      ignore_errors: yes
+
+    - name: Create recovery log entry
+      lineinfile:
+        path: /tmp/recovery.log
+        create: yes
+        line: "{{ ansible_date_time.iso8601 }} - NGINX service restarted successfully - Alert: {{ alert_name | default('Manual') }}"
+      delegate_to: localhost

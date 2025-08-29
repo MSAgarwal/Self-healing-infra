@@ -1,0 +1,52 @@
+---
+- name: Memory Cleanup and Optimization
+  hosts: local
+  gather_facts: yes
+  become: yes
+  
+  tasks:
+    - name: Check current memory usage
+      shell: free -m
+      register: memory_before
+
+    - name: Display memory usage before cleanup
+      debug:
+        msg: "Memory before cleanup: {{ memory_before.stdout_lines }}"
+
+    - name: Clear page cache
+      shell: |
+        sync
+        echo 1 > /proc/sys/vm/drop_caches
+      ignore_errors: yes
+
+    - name: Clear dentries and inodes
+      shell: echo 2 > /proc/sys/vm/drop_caches
+      ignore_errors: yes
+
+    - name: Clear all caches
+      shell: echo 3 > /proc/sys/vm/drop_caches
+      ignore_errors: yes
+
+    - name: Restart memory-heavy containers
+      docker_container:
+        name: "{{ item }}"
+        restart: yes
+        memory: "512m"  # Set memory limit
+      loop:
+        - nginx-target
+        - prometheus
+      ignore_errors: yes
+
+    - name: Check memory usage after cleanup
+      shell: free -m
+      register: memory_after
+
+    - name: Display memory usage after cleanup
+      debug:
+        msg: "Memory after cleanup: {{ memory_after.stdout_lines }}"
+
+    - name: Log memory cleanup
+      lineinfile:
+        path: /tmp/recovery.log
+        create: yes
+        line: "{{ ansible_date_time.iso8601 }} - Memory cleanup completed - Alert: {{ alert_name | default('Manual') }}"
