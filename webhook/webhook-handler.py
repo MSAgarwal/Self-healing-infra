@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 # Recovery action mappings
 RECOVERY_ACTIONS = {
     'restart_nginx': 'restart-nginx.yml',
-    'optimize_system': 'system-recovery.yml',
+    'optimize_system': 'system-recover.yml',
     'cleanup_memory': 'memory-cleanup.yml',
     'disk_cleanup': 'disk-cleanup.yml'
 }

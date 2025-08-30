@@ -33,7 +33,7 @@
         restart: yes
         memory: "512m"  # Set memory limit
       loop:
-        - nginx-target
+        - nginx
         - prometheus
       ignore_errors: yes
 

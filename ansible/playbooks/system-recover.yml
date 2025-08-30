@@ -37,7 +37,7 @@
         name: "{{ item }}"
         restart: yes
       loop:
-        - nginx-target
+        - nginx
       ignore_errors: yes
 
     - name: Clean up system resources

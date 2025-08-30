@@ -8,12 +8,12 @@ echo "🔥 Simulating failures for testing..."
 case "$1" in
     "nginx")
         echo "Stopping NGINX container..."
-        docker stop nginx-target || true
+        docker stop nginx || true
         echo "✅ NGINX stopped. Check Prometheus alerts in ~30 seconds."
         ;;
     "cpu")
         echo "Simulating high CPU usage..."
-        docker exec nginx-target sh -c '
+        docker exec nginx sh -c '
             for i in {1..4}; do
                 yes > /dev/null &
             done
@@ -25,7 +25,7 @@ case "$1" in
         ;;
     "memory")
         echo "Simulating high memory usage..."
-        docker exec nginx-target sh -c '
+        docker exec nginx sh -c '
             # Allocate 512MB of memory
             python3 -c "
 import time
@@ -41,7 +41,7 @@ time.sleep(300)  # Keep memory allocated for 5 minutes
         ;;
     "disk")
         echo "Simulating disk space issues..."
-        docker exec nginx-target sh -c '
+        docker exec nginx sh -c '
             dd if=/dev/zero of=/tmp/bigfile bs=1M count=100
             echo "Created 100MB file to simulate disk usage"
         '
