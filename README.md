@@ -26,39 +26,39 @@ This self-healing infrastructure consists of:
 ## Screenshots
 
 ### 1. System Ready State
-![System Ready](/screenshots/image6-system-ready.png)
+![System Ready](screenshots/system_startup.png)
 *All services running and healthy with service URLs displayed for easy access*
 
 ### 2. Service Status Monitoring
-![Service Status](/screenshots/image10-service-targets.png)
+![Service Status](screenshots/service_status.png)
 *Prometheus targets page showing health status and scrape information for all monitored endpoints*
 
 ### 3. Failure Simulation
-![Recovery Simulation](/screenshots/image7-failure-simulation.png)
+![Recovery Simulation](screenshots/nginx_failure_simulation.png)
 *Simulating nginx failure using test scripts and monitoring the recovery process*
 
 ### 4. Alert Management Interface
-![Alertmanager Interface - Initial State](/screenshots/image1-alertmanager-interface.png)
+![Alertmanager Interface - Initial State](screenshots/alertmanager-ui.png)
 *Alertmanager interface showing alert filtering options and the critical-webhook alert configuration*
 
 ### 5. Service Alert Dashboard (Pending State)
-![Service Alerts - Pending](/screenshots/image2-nginx-alert-pending.png)
+![Service Alerts - Pending](screenshots/service_alert-pending.png)
 *Prometheus alerts dashboard showing NginxDown alert in PENDING state with service details*
 
 ### 6. Service Alert Dashboard (Firing State)
-![Service Alerts - Firing](/screenshots/image3-nginx-alert-firing.png)
+![Service Alerts - Firing](screenshots/service_alert-firing.png)
 *Alert escalated to FIRING state, indicating NGINX service has been down for the configured threshold*
 
 ### 7. Metrics Visualization
-![Nginx Metrics Graph](/screenshots/image4-nginx-metrics-graph.png)
+![Nginx Metrics Graph](screenshots/nginx_up-metric_graph.png)
 *Grafana dashboard showing nginx_up metrics over time, displaying service availability patterns*
 
 ### 8. Webhook Alert Processing (Firing)
-![Webhook Processing - Alert](/screenshots/image8-webhook-alert-firing.png)
+![Webhook Processing - Alert](screenshots/webhook_logs_1.png)
 *Webhook handler receiving and processing critical alerts from Alertmanager*
 
 ### 9. Webhook Alert Processing (Resolution)
-![Webhook Processing - Resolution](/screenshots/image9-webhook-alert-resolved.png)
+![Webhook Processing - Resolution](screenshots/webhook_logs_2.png)
 *Alert resolution processing showing successful recovery and alert status change*
 
 ## Quick Start
