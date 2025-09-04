@@ -3,12 +3,12 @@ groups:
   rules:
   # NGINX Service Down Alert
   - alert: NginxDown
-    expr: up{job="nginx"} == 0
+    expr: nginx_up == 0
     for: 30s
     labels:
       severity: critical
       service: nginx
-      action: restart_service
+      # action: restart_service
     annotations:
       summary: "NGINX service is down"
       description: "NGINX service has been down for more than 30 seconds."
@@ -54,14 +54,14 @@ groups:
       description: "Disk space is below 10%."
       recovery_action: "disk_cleanup"
 
-- name: container_alerts
-  rules:
-  # Container Restart Alert
-  - alert: ContainerRestarted
-    expr: increase(container_start_time_seconds[1m]) > 0
-    for: 0m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Container restarted"
-      description: "Container {{ $labels.name }} has restarted."
+# - name: container_alerts
+#   rules:
+#   # Container Restart Alert
+#   - alert: ContainerRestarted
+#     expr: increase(container_start_time_seconds[1m]) > 0
+#     for: 0m
+#     labels:
+#       severity: warning
+#     annotations:
+#       summary: "Container restarted"
+#       description: "Container {{ $labels.name }} has restarted."

@@ -1,8 +1,9 @@
 ---
 - name: Restart NGINX Service
-  hosts: local
-  gather_facts: yes
+  hosts: localhost
+  gather_facts: no
   vars:
+    ansible_python_interpreter: /usr/local/bin/python3
     container_name: "nginx"
     service_name: "nginx"
     
@@ -16,7 +17,7 @@
           Timestamp: {{ timestamp | default('Unknown') }}
 
     - name: Check if NGINX container is running
-      docker_container_info:
+      community.docker.docker_container_info:
         name: "{{ container_name }}"
       register: container_info
       ignore_errors: yes
@@ -25,17 +26,16 @@
       debug:
         msg: "Container {{ container_name }} status: {{ container_info.container.State.Status if container_info.exists else 'Not found' }}"
 
-    - name: Restart NGINX container if it exists but is not running
-      docker_container:
+    - name: Restart NGINX container if it exists
+      community.docker.docker_container:
         name: "{{ container_name }}"
         state: started
-        restart: yes
+        restart: true
         restart_policy: unless-stopped
-      when: container_info.exists
-      register: restart_result
+      when: container_info.exists | default(false)
 
     - name: Start NGINX container if it doesn't exist
-      docker_container:
+      community.docker.docker_container:
         name: "{{ container_name }}"
         image: nginx:alpine
         state: started
@@ -43,15 +43,14 @@
         ports:
           - "80:80"
         networks:
-          - name: "{{ ansible_hostname }}_monitoring"
-      when: not container_info.exists
-      register: start_result
+          - name: monitoring
+      when: not container_info.exists | default(false)
 
     - name: Wait for NGINX to be ready
       uri:
-        url: "http://localhost:80"
+        url: "http://nginx:80"
         method: GET
-        status_code: [200, 403]  # 403 is also acceptable for default nginx
+        status_code: [200, 403]  # 403 is acceptable for default nginx
       retries: 10
       delay: 3
       register: nginx_health_check
@@ -63,7 +62,7 @@
 
     - name: Send recovery notification
       uri:
-        url: "http://localhost:9093/-/reload"
+        url: "http://alertmanager:9093/-/reload"
         method: POST
       ignore_errors: yes
 
